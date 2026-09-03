@@ -13,6 +13,9 @@ const addNewEmployeeSchema = new mongoose.Schema({
     block: String,
     panchayat: String,
     password: { type: String, required: true }, // Hashed Password
+    isActive: { type: Boolean, default: true },
+    deactivatedAt: { type: Date, default: null },
+    activatedAt: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now }
 }, { collection: 'employees' }); // ✅ Explicitly set collection name
 

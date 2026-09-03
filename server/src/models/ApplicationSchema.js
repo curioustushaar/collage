@@ -27,7 +27,9 @@ const applicantSchema = new mongoose.Schema({
     registeredBy: { type: String, default: 'Self' },
     emp_username: { type: String, default: null },
     emp_password: { type: String, default: null },
-    isActive: { type: Boolean, default: true }
+    isActive: { type: Boolean, default: true },
+    deactivatedAt: { type: Date, default: null },
+    activatedAt: { type: Date, default: null }
 });
 
 const Applicant = mongoose.model('Applicant', applicantSchema);

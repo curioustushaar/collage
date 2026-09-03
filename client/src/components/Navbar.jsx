@@ -937,6 +937,13 @@ const Navbar = () => {
                     >
                       General Jobs
                     </Link>
+                    <Link 
+                      to="/careers/verify-employee" 
+                      onClick={() => setCareersOpen(false)}
+                      className="flex items-center gap-2 px-4 py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-50 border-t border-slate-100"
+                    >
+                      <ShieldCheck className="h-4 w-4 text-emerald-600" /> Verify Employee ID
+                    </Link>
                   </div>
                 </div>
               )}
@@ -1172,6 +1179,13 @@ const Navbar = () => {
                 className="block rounded-md px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-rose-50 hover:text-[#ED1C24]"
               >
                 General Jobs
+              </Link>
+              <Link 
+                to="/careers/verify-employee" 
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200"
+              >
+                <ShieldCheck className="h-4 w-4 text-emerald-600" /> Verify Employee ID
               </Link>
             </div>
           </div>

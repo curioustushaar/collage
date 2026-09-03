@@ -32,6 +32,7 @@ import SwasthyaSurakshaRegister from './pages/SwasthyaSurakshaRegister';
 import Card from './pages/Card';
 import Application from './pages/Application';
 import VerifyHealthCard from './pages/VerifyHealthCard';
+import VerifyEmployee from './pages/VerifyEmployee';
 import MembershipRegister from './pages/MembershipRegister';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
@@ -66,6 +67,10 @@ function App() {
             <Route path="/donate" element={<Donate />} />
             <Route path="/careers/ngo-jobs" element={<NGOJobs />} />
             <Route path="/careers/general-jobs" element={<GeneralJobs />} />
+            <Route path="/careers/verify-employee" element={<VerifyEmployee />} />
+            <Route path="/careers/verify-id" element={<VerifyEmployee />} />
+            <Route path="/verify-employee" element={<VerifyEmployee />} />
+            <Route path="/verify-employee-id" element={<VerifyEmployee />} />
             <Route path="/medical/healthcard" element={<HealthCard />} />
             <Route path="/medical/health-card" element={<HealthCard />} />
             <Route path="/healthcard" element={<HealthCard />} />

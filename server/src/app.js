@@ -97,8 +97,12 @@ const allowedOrigins = [
     "http://localhost:5000",
     "http://localhost:5173", // Vite default port
     "http://localhost:3000",
+    "http://aagajfoundation.com",
     "https://aagajfoundation.com",
-    "https://www.aagajfoundation.com"
+    "http://www.aagajfoundation.com",
+    "https://www.aagajfoundation.com",
+    "http://api.aagajfoundation.com",
+    "https://api.aagajfoundation.com"
 ];
 
 if (process.env.FRONTEND_URL) {
@@ -109,6 +113,8 @@ if (process.env.FRONTEND_URL) {
         const cleanDomain = domain.replace(/^www\./, '');
         allowedOrigins.push(`https://${cleanDomain}`);
         allowedOrigins.push(`https://www.${cleanDomain}`);
+        allowedOrigins.push(`http://${cleanDomain}`);
+        allowedOrigins.push(`http://www.${cleanDomain}`);
     }
 }
 if (process.env.API_URL) {
@@ -121,15 +127,19 @@ app.use(cors({
 
         const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
         const isVercelDomain = /\.vercel\.app$/.test(origin); // Allow any Vercel preview/production domains
-        
-        if (isLocalhost || isVercelDomain || allowedOrigins.includes(origin)) {
+        const isAagajDomain = /^https?:\/\/([a-zA-Z0-9-]+\.)*aagajfoundation\.com(:\d+)?$/i.test(origin);
+        const isAagazDomain = /^https?:\/\/([a-zA-Z0-9-]+\.)*aagazfoundation\.com(:\d+)?$/i.test(origin);
+
+        if (isLocalhost || isVercelDomain || isAagajDomain || isAagazDomain || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
             console.warn("❌ CORS BLOCKED:", origin);
-            callback(new Error("CORS policy: Access denied"));
+            callback(null, false);
         }
     },
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 
 // ✅ Safe OPTIONS handler
@@ -342,12 +352,22 @@ app.get('/api/admin/get-all-applicants', verifyAdmin, async (req, res) => {
         const normalApplicants = await NormalApplicant.find().sort({ date: -1 }).lean();
         const employees = await Employee.find().sort({ createdAt: -1 }).lean();
 
-        const ngoTagged = ngoApplicants.map(a => ({ ...a, job_category: 'NGO' }));
-        const normalTagged = normalApplicants.map(a => ({ ...a, job_category: 'Normal' }));
+        const ngoTagged = ngoApplicants.map(a => ({ 
+            ...a, 
+            job_category: 'NGO',
+            isActive: a.isActive !== false,
+            deactivatedAt: a.deactivatedAt || null
+        }));
+        const normalTagged = normalApplicants.map(a => ({ 
+            ...a, 
+            job_category: 'Normal',
+            isActive: a.isActive !== false,
+            deactivatedAt: a.deactivatedAt || null
+        }));
 
         const employeeTagged = employees.map(e => ({
             _id: e._id,
-            uniqueId: e.empId.replace(/^EMP/, ''),
+            uniqueId: (e.empId || '').replace(/^EMP/, '') || e._id.toString().slice(-4),
             fullName: e.fullName,
             email: e.email,
             mobile: e.mobile,
@@ -358,7 +378,10 @@ app.get('/api/admin/get-all-applicants', verifyAdmin, async (req, res) => {
             emp_username: e.email,
             emp_password: 'Protected',
             photoPath: '',
-            applicationPdf: ''
+            applicationPdf: '',
+            date: e.createdAt,
+            isActive: e.isActive !== false,
+            deactivatedAt: e.deactivatedAt || null
         }));
 
         res.json([...ngoTagged, ...normalTagged, ...employeeTagged]);
@@ -714,7 +737,7 @@ const carouselRoutes = require('./routes/carouselRoutes');
 app.use('/api/carousel', carouselRoutes);
 
 
-// ✅ Toggle Applicant (Employee) Status (Active/Inactive)
+// ✅ Toggle Applicant (Employee) Status (Active/Inactive) with Deactivation Timestamp
 app.patch('/api/admin/toggle-applicant-status/:id', verifyAdmin, async (req, res) => {
     try {
         const { id } = req.params;
@@ -727,16 +750,31 @@ app.patch('/api/admin/toggle-applicant-status/:id', verifyAdmin, async (req, res
         }
 
         if (!user) {
+            user = await Employee.findById(id);
+            Model = Employee;
+        }
+
+        if (!user) {
             return res.status(404).json({ success: false, message: "Employee not found." });
         }
 
-        user.isActive = user.isActive === false ? true : false;
+        const willBeActive = user.isActive === false ? true : false;
+        user.isActive = willBeActive;
+        
+        if (!willBeActive) {
+            user.deactivatedAt = new Date();
+        } else {
+            user.deactivatedAt = null;
+            user.activatedAt = new Date();
+        }
+
         await user.save();
 
         res.json({
             success: true,
             message: `Employee account ${user.isActive ? 'activated' : 'deactivated'} successfully!`,
-            isActive: user.isActive
+            isActive: user.isActive,
+            deactivatedAt: user.deactivatedAt
         });
     } catch (error) {
         console.error("Toggle Status Error:", error);
