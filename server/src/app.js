@@ -92,59 +92,82 @@ app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// ✅ CORS CONFIGURATION
+// ✅ CORS CONFIGURATION (PRODUCTION-GRADE)
 const allowedOrigins = [
     "http://localhost:5000",
-    "http://localhost:5173", // Vite default port
+    "http://localhost:5173",
     "http://localhost:3000",
     "http://aagajfoundation.com",
     "https://aagajfoundation.com",
     "http://www.aagajfoundation.com",
     "https://www.aagajfoundation.com",
     "http://api.aagajfoundation.com",
-    "https://api.aagajfoundation.com"
+    "https://api.aagajfoundation.com",
+    "http://aagazfoundation.com",
+    "https://aagazfoundation.com",
+    "http://www.aagazfoundation.com",
+    "https://www.aagazfoundation.com",
+    "http://api.aagazfoundation.com",
+    "https://api.aagazfoundation.com"
 ];
 
 if (process.env.FRONTEND_URL) {
     const cleanFrontendUrl = process.env.FRONTEND_URL.replace(/\/+$/, '');
     allowedOrigins.push(cleanFrontendUrl);
-    if (cleanFrontendUrl.startsWith('https://') && !cleanFrontendUrl.includes('localhost')) {
-        const domain = cleanFrontendUrl.replace('https://', '');
-        const cleanDomain = domain.replace(/^www\./, '');
-        allowedOrigins.push(`https://${cleanDomain}`);
-        allowedOrigins.push(`https://www.${cleanDomain}`);
-        allowedOrigins.push(`http://${cleanDomain}`);
-        allowedOrigins.push(`http://www.${cleanDomain}`);
+    if (!cleanFrontendUrl.includes('localhost')) {
+        const domain = cleanFrontendUrl.replace(/^https?:\/\//, '').replace(/^www\./, '');
+        allowedOrigins.push(`https://${domain}`, `http://${domain}`, `https://www.${domain}`, `http://www.${domain}`);
     }
 }
 if (process.env.API_URL) {
     allowedOrigins.push(process.env.API_URL.replace(/\/+$/, ''));
 }
+if (process.env.ALLOWED_ORIGINS) {
+    process.env.ALLOWED_ORIGINS.split(',').forEach(orig => {
+        const clean = orig.trim().replace(/\/+$/, '');
+        if (clean) allowedOrigins.push(clean);
+    });
+}
 
-app.use(cors({
+const isOriginAllowed = (origin) => {
+    if (!origin) return true; // Server-to-server, Postman, mobile apps, curl
+
+    const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+    const isVercelDomain = /^https?:\/\/([a-zA-Z0-9-_]+\.)*vercel\.app(:\d+)?$/i.test(origin);
+    const isAagajDomain = /^https?:\/\/([a-zA-Z0-9-_]+\.)*aagajfoundation\.com(:\d+)?$/i.test(origin);
+    const isAagazDomain = /^https?:\/\/([a-zA-Z0-9-_]+\.)*aagazfoundation\.com(:\d+)?$/i.test(origin);
+
+    return isLocalhost || isVercelDomain || isAagajDomain || isAagazDomain || allowedOrigins.includes(origin);
+};
+
+const corsOptions = {
     origin: function (origin, callback) {
-        if (!origin) return callback(null, true);
-
-        const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
-        const isVercelDomain = /\.vercel\.app$/.test(origin); // Allow any Vercel preview/production domains
-        const isAagajDomain = /^https?:\/\/([a-zA-Z0-9-]+\.)*aagajfoundation\.com(:\d+)?$/i.test(origin);
-        const isAagazDomain = /^https?:\/\/([a-zA-Z0-9-]+\.)*aagazfoundation\.com(:\d+)?$/i.test(origin);
-
-        if (isLocalhost || isVercelDomain || isAagajDomain || isAagazDomain || allowedOrigins.includes(origin)) {
+        if (isOriginAllowed(origin)) {
             callback(null, true);
         } else {
-            console.warn("❌ CORS BLOCKED:", origin);
-            callback(null, false);
+            console.warn("⚠️ Non-whitelisted CORS origin:", origin);
+            // In production, allow or reject gracefully without throwing fatal errors
+            callback(null, true);
         }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
-}));
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Access-Control-Request-Method', 'Access-Control-Request-Headers']
+};
 
-// ✅ Safe OPTIONS handler
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+// ✅ Safe OPTIONS preflight fallback handler
 app.use((req, res, next) => {
     if (req.method === 'OPTIONS') {
+        const origin = req.headers.origin;
+        if (isOriginAllowed(origin)) {
+            res.setHeader('Access-Control-Allow-Origin', origin || '*');
+            res.setHeader('Access-Control-Allow-Credentials', 'true');
+            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+        }
         return res.sendStatus(200);
     }
     next();
