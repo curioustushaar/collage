@@ -7,6 +7,7 @@ const multer = require('multer');
 const PDFDocument = require('pdfkit');
 const Razorpay = require('razorpay');
 const { Applicant, NormalApplicant } = require('../models/ApplicationSchema');
+const Employee = require('../models/AddNewEmployeeSchema');
 const PendingPayment = require('../models/PendingPayment');
 const PaymentLog = require('../models/PaymentLog');
 const crypto = require('crypto');
@@ -818,23 +819,98 @@ router.post('/admin/create', verifyAdmin, handlePhotoUpload, async (req, res) =>
 // Public status verification route
 router.get('/status/:uniqueId', async (req, res) => {
     try {
-        const { uniqueId } = req.params;
-        // Search in both NGO jobs and normal jobs applicants
-        let applicant = await Applicant.findOne({ uniqueId: uniqueId });
-        if (!applicant) {
-            applicant = await NormalApplicant.findOne({ uniqueId: uniqueId });
-        }
-        
-        if (!applicant) {
-            return res.status(404).json({ success: false, message: "Employee not found" });
+        const rawId = (req.params.uniqueId || '').trim();
+        if (!rawId) {
+            return res.status(400).json({ success: false, message: "ID is required" });
         }
 
-        res.json({ 
-            success: true, 
-            isActive: applicant.isActive !== false // defaults to true
+        const cleanId = rawId.replace(/^AF-?/i, '').replace(/^EMP-?/i, '');
+        const searchRegex = new RegExp(`^${cleanId}$`, 'i');
+        const empFullId = rawId.toUpperCase().startsWith('EMP') ? rawId.toUpperCase() : `EMP${cleanId}`;
+
+        // 1. Search in NGO Applicants
+        let applicant = await Applicant.findOne({
+            $or: [
+                { uniqueId: rawId },
+                { uniqueId: cleanId },
+                { email: new RegExp(`^${rawId}$`, 'i') },
+                { mobile: rawId }
+            ]
+        }).lean();
+        let category = 'NGO';
+
+        // 2. Search in Normal Applicants
+        if (!applicant) {
+            applicant = await NormalApplicant.findOne({
+                $or: [
+                    { uniqueId: rawId },
+                    { uniqueId: cleanId },
+                    { email: new RegExp(`^${rawId}$`, 'i') },
+                    { mobile: rawId }
+                ]
+            }).lean();
+            category = 'Normal';
+        }
+
+        // 3. Search in Direct Employees
+        if (!applicant) {
+            const employee = await Employee.findOne({
+                $or: [
+                    { empId: rawId.toUpperCase() },
+                    { empId: empFullId },
+                    { email: new RegExp(`^${rawId}$`, 'i') },
+                    { mobile: rawId }
+                ]
+            }).lean();
+
+            if (employee) {
+                const isActive = employee.isActive !== false;
+                return res.json({
+                    success: true,
+                    isActive,
+                    status: isActive ? 'ACTIVE' : 'INACTIVE',
+                    deactivatedAt: employee.deactivatedAt || null,
+                    employee: {
+                        uniqueId: employee.empId,
+                        fullName: employee.fullName,
+                        designation: employee.designation,
+                        jobCategory: 'Direct Employee',
+                        district: employee.district || 'N/A',
+                        state: employee.state || 'N/A',
+                        photoPath: '',
+                        joiningDate: employee.createdAt,
+                        isActive,
+                        deactivatedAt: employee.deactivatedAt || null
+                    }
+                });
+            }
+        }
+
+        if (!applicant) {
+            return res.status(404).json({ success: false, message: "Employee / Applicant not found" });
+        }
+
+        const isActive = applicant.isActive !== false;
+        res.json({
+            success: true,
+            isActive,
+            status: isActive ? 'ACTIVE' : 'INACTIVE',
+            deactivatedAt: applicant.deactivatedAt || null,
+            employee: {
+                uniqueId: `AF-${applicant.uniqueId || cleanId}`,
+                fullName: applicant.fullName,
+                designation: applicant.roleApplied || applicant.applyForPost || `${category} Candidate`,
+                jobCategory: category === 'NGO' ? 'NGO Project' : 'General Role',
+                district: applicant.district || applicant.place || 'N/A',
+                state: applicant.state || 'N/A',
+                photoPath: applicant.photoPath || '',
+                joiningDate: applicant.date,
+                isActive,
+                deactivatedAt: applicant.deactivatedAt || null
+            }
         });
     } catch (err) {
-        console.error(err);
+        console.error("Employee Status Verification Error:", err);
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 });

@@ -22,6 +22,7 @@ const Card = () => {
 
   const [photoUrl, setPhotoUrl] = useState('https://via.placeholder.com/120?text=Photo');
   const [isActive, setIsActive] = useState(true);
+  const [deactivatedAt, setDeactivatedAt] = useState(null);
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
@@ -32,6 +33,9 @@ const Card = () => {
         .then(data => {
           if (data.success) {
             setIsActive(data.isActive);
+            if (data.deactivatedAt) {
+              setDeactivatedAt(data.deactivatedAt);
+            }
           }
         })
         .catch(err => console.error("Error verifying active status:", err));
@@ -161,9 +165,17 @@ const Card = () => {
 
       {/* Note box */}
       {!isActive ? (
-        <div className="max-w-[350px] w-full bg-red-50 border border-solid border-red-600 text-red-600 rounded-xl p-3 text-xs font-black text-center flex items-center gap-2">
-          <ShieldAlert className="h-5 w-5 shrink-0" />
-          <span>WARNING: This ID card has been deactivated. The employee is no longer authorized.</span>
+        <div className="max-w-[350px] w-full bg-red-50 border border-solid border-red-600 text-red-600 rounded-xl p-3 text-xs font-black text-center flex flex-col items-center gap-1">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-5 w-5 shrink-0" />
+            <span>WARNING: This ID card has been deactivated.</span>
+          </div>
+          {deactivatedAt && (
+            <span className="text-[11px] font-bold text-rose-800 bg-red-100 px-2 py-0.5 rounded">
+              Deactivated on: {new Date(deactivatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+            </span>
+          )}
+          <span className="text-[10px] font-semibold text-rose-700">The employee is no longer authorized.</span>
         </div>
       ) : (
         <div className="max-w-[350px] w-full bg-rose-50 border border-dashed border-[#ED1C24] text-[#ED1C24] rounded-xl p-3 text-xs font-black text-center flex items-center gap-2">

@@ -2532,10 +2532,23 @@ const AdminDashboard = () => {
                                 </td>
                                 <td className="py-3 px-4 font-black text-[#ED1C24]">AF-{user.uniqueId}</td>
                                 <td className="py-3 px-4 font-semibold text-slate-800">
-                                  <div className="flex items-center gap-2">
-                                    <p className="font-bold">{user.fullName}</p>
-                                    {user.isActive === false && (
-                                      <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[9px] font-bold text-rose-800 uppercase animate-pulse">Deactivated</span>
+                                  <div className="flex flex-col gap-1">
+                                    <div className="flex items-center gap-2">
+                                      <p className="font-bold">{user.fullName}</p>
+                                      {user.isActive === false ? (
+                                        <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[9px] font-black text-rose-800 uppercase tracking-wider">
+                                          Deactivated
+                                        </span>
+                                      ) : (
+                                        <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-800 uppercase tracking-wider">
+                                          Active
+                                        </span>
+                                      )}
+                                    </div>
+                                    {user.isActive === false && user.deactivatedAt && (
+                                      <p className="text-[10px] font-semibold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100 inline-block w-fit">
+                                        Deactivated: {new Date(user.deactivatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                      </p>
                                     )}
                                   </div>
                                   <p className="text-[10px] text-slate-400 font-medium">{user.email || user.mobile}</p>
@@ -2574,7 +2587,7 @@ const AdminDashboard = () => {
                                 </td>
                                 <td className="py-3 px-4 text-right">
                                   <div className="flex justify-end gap-1">
-                                    {['NGO', 'Normal'].includes(user.job_category) && (
+                                    {['NGO', 'Normal', 'Employee'].includes(user.job_category) && (
                                       <button
                                         onClick={() => handleToggleApplicantStatus(user._id, user.isActive)}
                                         className={`rounded-lg border p-1.5 transition-all cursor-pointer ${user.isActive === false ? 'border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-700' : 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700'}`}
