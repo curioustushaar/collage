@@ -74,7 +74,7 @@ const Card = () => {
 
   const handleImageError = (e) => {
     const currentSrc = e.target.src;
-    const prodBase = 'https://aagajfoundation.com';
+    const prodBase = 'https://www.aagajfoundation.com';
     
     if (currentSrc && (currentSrc.includes('localhost') || currentSrc.includes('127.0.0.1'))) {
       try {

@@ -947,7 +947,7 @@ const AdminDashboard = () => {
         })
         .catch((err) => {
           console.error("CORS fetch failed, trying fallback:", err);
-          const prodBase = 'https://aagajfoundation.com';
+          const prodBase = 'https://www.aagajfoundation.com';
           if (url.includes('localhost') || url.includes('127.0.0.1')) {
             try {
               const urlObj = new URL(url);
@@ -1003,7 +1003,7 @@ const AdminDashboard = () => {
         })
         .catch((err) => {
           console.error("CORS fetch failed, trying fallback:", err);
-          const prodBase = 'https://aagajfoundation.com';
+          const prodBase = 'https://www.aagajfoundation.com';
           if (url.includes('localhost') || url.includes('127.0.0.1')) {
             try {
               const urlObj = new URL(url);
@@ -1491,7 +1491,7 @@ const AdminDashboard = () => {
 
   const handleImageError = (e) => {
     const currentSrc = e.target.src;
-    const prodBase = 'https://aagajfoundation.com';
+    const prodBase = 'https://www.aagajfoundation.com';
     
     // Only attempt production fallback for relative server URLs, NOT for base64/blob
     if (
@@ -4711,7 +4711,7 @@ const AdminDashboard = () => {
                 </div>
                 
                 <div className="bg-[#000080] text-white text-center py-1.5 text-[8px] font-bold uppercase tracking-widest">
-                  aagajfoundation.com | Helpline: 9431430464
+                  www.aagajfoundation.com | Helpline: 9431430464
                 </div>
               </div>
             </div>

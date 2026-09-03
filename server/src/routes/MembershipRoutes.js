@@ -8,8 +8,8 @@ const Membership = require('../models/MembershipSchema');
 const Razorpay = require('razorpay');
 
 const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
+    key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
+    key_secret: process.env.RAZORPAY_KEY_SECRET || 'rzp_test_placeholder'
 });
 
 // Middleware to verify session (allows either Admin JWT or employee token/session)
