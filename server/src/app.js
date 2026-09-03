@@ -156,7 +156,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 // ✅ Safe OPTIONS preflight fallback handler
 app.use((req, res, next) => {
@@ -166,7 +165,7 @@ app.use((req, res, next) => {
             res.setHeader('Access-Control-Allow-Origin', origin || '*');
             res.setHeader('Access-Control-Allow-Credentials', 'true');
             res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD');
-            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With', 'Accept', 'Origin');
         }
         return res.sendStatus(200);
     }
